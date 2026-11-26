@@ -3,7 +3,7 @@
 Experiment `main-v1`: the 196 unique BIRD Mini-Dev questions of formula_1, european_football_2,
 codebase_community and financial, each run 3 times by each pipeline (1,176 runs, all finished),
 on PostgreSQL 14.20 (Apple M1), with `claude-haiku-5-5` at effort `medium`, prompt version `p1`.
-Full tables: `docs/evaluation_results.md`. Online dashboard: see README.
+Full tables: `docs/evaluation_results.md`.
 
 - **baseline** = write SQL + up to 2 error fixes.
 - **plan_guided** = baseline + up to 2 rewrites guided by `EXPLAIN ANALYZE`, triggered when the plan

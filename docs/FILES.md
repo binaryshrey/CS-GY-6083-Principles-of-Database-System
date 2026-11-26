@@ -23,7 +23,7 @@
 | `scripts/create_user.py` | Trusted setup of accounts (the only way to create a researcher) |
 | `scripts/run_experiment.py` | Batch runner (parallel LLM calls, serialized timing, resumable, optional freeze) |
 | `scripts/eval_report.py` | Writes an experiment's evaluation tables and examples as Markdown |
-| `scripts/export_dashboard.py` | Writes an experiment's report tables as JSON (rows + the SQL that made them) for the online dashboard |
+| `scripts/export_dashboard.py` | Writes an experiment's report tables as JSON (rows + the SQL that made them) for a results dashboard |
 | **webapp/** | |
 | `webapp/app.py` | Flask app: sessions, CSRF, role checks, all routes (public, analyst, researcher), background execution of runs started from Ask / Questions |
 | `webapp/queries.py` | Every SQL statement the web app runs, by name |

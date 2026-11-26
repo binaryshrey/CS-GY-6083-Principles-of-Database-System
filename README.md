@@ -15,7 +15,6 @@ and real runs.
 ## Results
 
 - Evaluation write-up: [`docs/REFLECTION.md`](docs/REFLECTION.md); all tables: [`docs/evaluation_results.md`](docs/evaluation_results.md)
-- Online dashboard (experiment `main-v1`): https://claude.ai/artifact/P1xt2tmwtwmnZXjerQs5gk
 - In the app: log in as a researcher → Experiments → `main-v1`
 
 ## Requirements
