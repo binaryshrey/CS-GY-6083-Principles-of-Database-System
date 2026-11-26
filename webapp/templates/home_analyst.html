@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Welcome, {{ user.name }}</h1>
+<div class="card">
+  <h3>Ask a question</h3>
+  <form method="post" action="{{ url_for('ask') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="row">
+      <div><label for="db_id">Database</label>
+        <select id="db_id" name="db_id">{% for d in databases %}<option value="{{ d.db_id }}">{{ d.db_name }}</option>{% endfor %}</select></div>
+      <div><label for="config_id">Pipeline</label>
+        <select id="config_id" name="config_id">{% for c in configs %}<option value="{{ c.config_id }}" {% if c.label == 'plan_guided' %}selected{% endif %}>{{ c.label }}</option>{% endfor %}</select></div>
+    </div>
+    <label for="question">Question</label>
+    <textarea id="question" name="question" maxlength="1000" required placeholder="e.g. Which driver won the most races in 2009?"></textarea>
+    <p><button>Generate SQL</button> <a href="{{ url_for('ask') }}">add an evidence note</a></p>
+  </form>
+</div>
+<h2>Your recent runs</h2>
+{% set runs = recent %}{% include "_runs_table.html" %}
+{% endblock %}

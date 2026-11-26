@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Ask a question{% endblock %}
+{% block content %}
+<h1>Ask a question</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="row">
+    <div><label for="db_id">Database</label>
+      <select id="db_id" name="db_id">{% for d in databases %}<option value="{{ d.db_id }}" {% if form.get('db_id')|string == d.db_id|string %}selected{% endif %}>{{ d.db_name }}</option>{% endfor %}</select></div>
+    <div><label for="config_id">Pipeline config</label>
+      <select id="config_id" name="config_id">{% for c in configs %}<option value="{{ c.config_id }}" {% if (form.get('config_id')|string == c.config_id|string) or (not form.get('config_id') and c.label == 'plan_guided') %}selected{% endif %}>{{ c.label }} ({{ c.model_name }}, effort {{ c.effort }}, rewrites {{ c.max_rewrite_attempts }})</option>{% endfor %}</select></div>
+  </div>
+  <label for="question">Question (max 1000 characters)</label>
+  <textarea id="question" name="question" maxlength="1000" required>{{ form.get('question', '') }}</textarea>
+  <label for="evidence">Evidence / definitions (optional)</label>
+  <textarea id="evidence" name="evidence" maxlength="1000" placeholder="e.g. won refers to position = 1">{{ form.get('evidence', '') }}</textarea>
+  <p><button>Generate SQL</button></p>
+  <p class="muted">The model writes a query, it is run read-only with a 30 s limit, errors are sent back for a fix,
+  and plan-guided configs then try a faster equivalent. Your own questions have no gold answer, so correctness is not scored.</p>
+</form>
+{% endblock %}

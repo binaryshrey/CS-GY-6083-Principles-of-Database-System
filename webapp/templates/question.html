@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Question {{ q.question_id }}{% endblock %}
+{% block content %}
+<h1>Question {{ q.question_id }} <span class="badge">{{ q.db_name }}</span> {% if q.difficulty %}<span class="badge">{{ q.difficulty }}</span>{% endif %}</h1>
+<div class="card">
+  <p><strong>{{ q.question_text }}</strong></p>
+  {% if q.evidence_hint %}<p class="muted">Evidence: {{ q.evidence_hint }}</p>{% endif %}
+  {% if q.gold_sql %}
+    <h3>Gold SQL (BIRD)</h3><pre>{{ q.gold_sql }}</pre>
+    <p>Gold median: <strong>{{ q.gold_median_ms|ms }} ms</strong>
+      <span class="muted">(trials: {% for t in trials %}{{ '%.3f'|format(t.runtime_ms) }}{% if t.is_warmup %} (warm-up){% endif %}{% if not loop.last %}, {% endif %}{% endfor %})</span></p>
+  {% else %}<p class="muted">Your own question: no gold SQL.</p>{% endif %}
+  {% if tables %}<p>Tables: {% for t in tables %}<code>{{ t.table_name }}</code> ({{ '{:,}'.format(t.row_count) }} rows){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+</div>
+{% if q.source == 'bird' %}
+<form method="post" action="{{ url_for('question_run', question_id=q.question_id) }}" class="card row">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div><label for="config_id">Run the pipeline with</label>
+    <select id="config_id" name="config_id">{% for c in configs %}<option value="{{ c.config_id }}">{{ c.label }} (rewrites {{ c.max_rewrite_attempts }}, effort {{ c.effort }})</option>{% endfor %}</select></div>
+  <div><button>Run</button></div>
+</form>
+{% endif %}
+<h2>Runs on this question</h2>
+<div class="table-wrap"><table>
+  <tr><th>Run</th><th>Experiment</th><th>Config</th><th>Status</th><th>Correct</th><th class="num">Final median ms</th><th class="num">Tokens</th><th>Started</th></tr>
+  {% for r in runs %}
+  <tr><td><a href="{{ url_for('run_detail', run_id=r.run_id) }}">#{{ r.run_id }}</a></td><td>{{ r.experiment }}</td><td>{{ r.label }}</td>
+      <td>{{ r.status }}</td><td>{% if r.status == 'running' %}–{% elif r.is_correct %}<span class="ok">yes</span>{% else %}<span class="bad">no</span>{% endif %}</td>
+      <td class="num">{{ r.median_ms|ms }}</td><td class="num">{{ r.total_tokens }}</td><td>{{ r.started_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+  {% else %}<tr><td colspan="8" class="muted">No runs you can see yet.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

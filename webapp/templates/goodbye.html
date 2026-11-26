@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Goodbye{% endblock %}
+{% block content %}
+<h1>Goodbye{% if name %}, {{ name }}{% endif %}</h1>
+<div class="card"><p>You are logged out and your session has been destroyed.</p>
+<p><a class="button" href="{{ url_for('login') }}">Log in again</a></p></div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Welcome, {{ user.name }} <span class="badge">researcher</span></h1>
+<p class="muted">Claude API spend so far: <strong>${{ '%.2f'|format(spent) }}</strong>{% if budget > 0 %} of the ${{ '%.2f'|format(budget) }} cap{% endif %} (estimate from logged tokens, errs high).</p>
+<h2>Experiments</h2>
+<div class="table-wrap"><table>
+  <tr><th>Name</th><th>Status</th><th class="num">Runs</th><th class="num">Running</th><th class="num">Done</th><th class="num">Failed</th></tr>
+  {% for e in experiments %}
+  <tr><td><a href="{{ url_for('experiment_detail', experiment_id=e.experiment_id) }}">{{ e.name }}</a></td>
+      <td>{% if e.is_frozen %}<span class="badge">frozen</span>{% else %}open{% endif %}</td>
+      <td class="num">{{ e.runs }}</td><td class="num">{{ e.running }}</td><td class="num">{{ e.done }}</td><td class="num">{{ e.failed }}</td></tr>
+  {% endfor %}
+</table></div>
+<h2>Your recent runs</h2>
+{% set runs = recent %}{% include "_runs_table.html" %}
+{% endblock %}

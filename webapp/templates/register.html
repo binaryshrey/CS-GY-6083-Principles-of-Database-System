@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<h1>Create an analyst account</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <label for="name">Name</label>
+  <input type="text" id="name" name="name" value="{{ form.get('name', '') }}" required maxlength="100">
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required maxlength="254">
+  <label for="password">Password (at least 8 characters)</label>
+  <input type="password" id="password" name="password" required minlength="8" maxlength="200">
+  <label for="password2">Repeat password</label>
+  <input type="password" id="password2" name="password2" required minlength="8" maxlength="200">
+  <p><button>Register</button></p>
+  <p class="muted">Researcher accounts are created by the project owner, not through this form.</p>
+</form>
+{% endblock %}

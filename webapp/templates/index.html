@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Efficient Text-to-SQL</h1>
+<div class="card">
+  <p>Ask a database a question in plain English and an AI model (Claude) writes the SQL.
+  This system goes one step further than ordinary Text-to-SQL: it reads PostgreSQL's
+  <code>EXPLAIN ANALYZE</code> plan of the generated query and asks the model for a <em>faster</em>
+  query that returns exactly the same rows. A rewrite is kept only if the rows match and the
+  measured runtime drops.</p>
+  <p>Every attempt, plan, timing and model call is stored, so we can measure accuracy against the
+  BIRD benchmark's gold queries, speed (BIRD's R-VES score) and extra model cost.</p>
+  <p><a class="button" href="{{ url_for('login') }}">Log in</a> &nbsp; or <a href="{{ url_for('register') }}">create an analyst account</a>.
+  Questions, runs and history require login.</p>
+</div>
+<h2>Databases you can query</h2>
+<div class="table-wrap"><table>
+  <tr><th>Database</th><th>Domain</th><th class="num">Tables</th><th class="num">Benchmark questions</th><th class="num">Size (MB)</th></tr>
+  {% for d in databases %}
+  <tr><td>{{ d.db_name }}</td><td>{{ d.domain }}</td><td class="num">{{ d.table_count }}</td>
+      <td class="num">{{ d.question_count }}</td><td class="num">{{ d.size_mb }}</td></tr>
+  {% endfor %}
+</table></div>
+<p class="muted">Data: BIRD Mini-Dev (PostgreSQL version), CC BY-SA 4.0.</p>
+{% endblock %}

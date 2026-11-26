@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ e.name }}{% endblock %}
+{% block head %}{% if progress and progress.running %}<meta http-equiv="refresh" content="10">{% endif %}{% endblock %}
+{% block content %}
+<h1>Experiment: {{ e.name }} {% if e.is_frozen %}<span class="badge">frozen</span>{% endif %}</h1>
+{% if e.description %}<p class="muted">{{ e.description }}</p>{% endif %}
+{% if progress %}
+<div class="grid">
+  <div class="stat"><div class="v">{{ progress.runs }}</div><div class="k">runs</div></div>
+  <div class="stat"><div class="v">{{ progress.running }}</div><div class="k">running{% if progress.running %} (page refreshes){% endif %}</div></div>
+  <div class="stat"><div class="v">{{ progress.done }}</div><div class="k">done</div></div>
+  <div class="stat"><div class="v">{{ progress.failed }}</div><div class="k">failed / timeout</div></div>
+</div>
+{% endif %}
+
+<h2>Summary per config</h2>
+<div class="table-wrap"><table>
+  <tr><th>Config</th><th class="num">Finished runs</th><th class="num">EX %</th><th class="num">R-VES</th><th class="num">Avg runtime / gold (correct)</th>
+      <th class="num">Median ms (correct)</th><th class="num">Avg tokens</th><th class="num">Avg LLM calls</th><th class="num">Avg LLM time s</th></tr>
+  {% for s in summary %}
+  <tr><td>{{ s.label }}</td><td class="num">{{ s.runs }}</td><td class="num">{{ s.ex_percent }}</td><td class="num">{{ s.rves }}</td>
+      <td class="num">{{ s.avg_ratio_vs_gold }}</td><td class="num">{{ s.median_ms_correct }}</td><td class="num">{{ s.avg_tokens }}</td>
+      <td class="num">{{ s.avg_calls }}</td><td class="num">{{ s.avg_llm_seconds }}</td></tr>
+  {% else %}<tr><td colspan="9" class="muted">No finished runs yet.</td></tr>{% endfor %}
+</table></div>
+<p class="muted">EX = execution accuracy (final result equals gold as a set of rows). R-VES = 100 × mean reward, reward 1.25/1/0.75/0.5/0.25 for τ = gold/pred runtime ≥2 / ≥1 / ≥0.5 / ≥0.25 / below, 0 if wrong.</p>
+
+<h2>Slow vs fast questions <span class="muted">(slow: gold median ≥ {{ slow_ms }} ms)</span></h2>
+<div class="table-wrap"><table>
+  <tr><th>Config</th><th>Bucket</th><th class="num">Runs</th><th class="num">EX %</th><th class="num">R-VES</th><th class="num">Avg runtime / gold</th></tr>
+  {% for s in slowfast %}<tr><td>{{ s.label }}</td><td>{{ s.bucket }}</td><td class="num">{{ s.runs }}</td><td class="num">{{ s.ex_percent }}</td><td class="num">{{ s.rves }}</td><td class="num">{{ s.avg_ratio_vs_gold }}</td></tr>{% endfor %}
+</table></div>
+
+<h2>Effect of the rewrite stage (same run, before vs after)</h2>
+<div class="table-wrap"><table>
+  <tr><th>Config</th><th class="num">Runs with a rewrite attempt</th><th class="num">Final query is a rewrite</th><th class="num">Correct before</th><th class="num">Correct after</th>
+      <th class="num">Geo-mean speedup (rewritten)</th><th class="num">Total ms before</th><th class="num">Total ms after</th></tr>
+  {% for x in effect %}<tr><td>{{ x.label }}</td><td class="num">{{ x.runs_with_rewrite_attempt }}</td><td class="num">{{ x.final_is_rewrite }}</td><td class="num">{{ x.correct_before }}</td>
+    <td class="num">{{ x.correct_after }}</td><td class="num">{{ x.geomean_speedup_rewritten }}</td><td class="num">{{ x.total_ms_before }}</td><td class="num">{{ x.total_ms_after }}</td></tr>
+  {% else %}<tr><td colspan="8" class="muted">No rewrites attempted yet.</td></tr>{% endfor %}
+</table></div>
+
+<h2>Rewrite outcomes</h2>
+<div class="table-wrap"><table>
+  <tr><th>Config</th><th>Outcome</th><th class="num">Rewrites</th></tr>
+  {% for r in rewrites %}<tr><td>{{ r.label }}</td><td>{{ r.outcome|replace('_', ' ') }}</td><td class="num">{{ r.n }}</td></tr>
+  {% else %}<tr><td colspan="3" class="muted">No rewrites yet.</td></tr>{% endfor %}
+</table></div>
+
+<h2>Biggest accepted speedups</h2>
+{% for s in speedups %}
+<div class="card">
+  <p><a href="{{ url_for('run_detail', run_id=s.run_id) }}">Run #{{ s.run_id }}</a> · question {{ s.question_id }} · {{ s.label }} ·
+    <strong>{{ s.speedup }}×</strong> ({{ s.before_ms }} → {{ s.after_ms }} ms) · issues before: {{ s.issues_before or 'none' }} ·
+    matches gold: {% if s.matches_gold %}<span class="ok">yes</span>{% else %}<span class="bad">no</span>{% endif %}</p>
+  <div class="row"><div><h3>Before</h3><pre>{{ s.before_sql }}</pre></div><div><h3>After</h3><pre>{{ s.after_sql }}</pre></div></div>
+</div>
+{% else %}<p class="muted">No accepted rewrites yet.</p>{% endfor %}
+
+<h2>Runs <span class="muted">(latest 200)</span></h2>
+<p>Filter: <a href="?">all</a> · <a href="?status=running">running</a> · <a href="?status=done">done</a> · <a href="?status=failed">failed</a> · <a href="?status=timeout">timeout</a></p>
+<div class="table-wrap"><table>
+  <tr><th>Run</th><th>Question</th><th>Config</th><th>Status</th><th>Correct</th><th class="num">Final median ms</th><th class="num">Tokens</th></tr>
+  {% for r in runs %}<tr><td><a href="{{ url_for('run_detail', run_id=r.run_id) }}">#{{ r.run_id }}</a></td>
+    <td><a href="{{ url_for('question_detail', question_id=r.question_id) }}">{{ r.question_id }}</a> {{ r.question }}</td><td>{{ r.label }}</td><td>{{ r.status }}</td>
+    <td>{% if r.status == 'running' %}–{% elif r.is_correct %}<span class="ok">yes</span>{% else %}<span class="bad">no</span>{% endif %}</td>
+    <td class="num">{{ r.median_ms|ms }}</td><td class="num">{{ r.total_tokens }}</td></tr>
+  {% else %}<tr><td colspan="7" class="muted">No runs.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

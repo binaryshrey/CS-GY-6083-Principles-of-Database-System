@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}My runs{% endblock %}
+{% block content %}
+<h1>My runs</h1>
+<p class="muted">Only runs you started are listed. Batch experiment runs are under each question and in the experiment reports.</p>
+{% include "_runs_table.html" %}
+{% endblock %}

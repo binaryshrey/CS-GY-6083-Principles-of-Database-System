@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Benchmark questions{% endblock %}
+{% block content %}
+<h1>Benchmark questions</h1>
+<form method="get" class="card row">
+  <div><label for="db_id">Database</label>
+    <select id="db_id" name="db_id"><option value="">all</option>
+      {% for d in databases %}<option value="{{ d.db_id }}" {% if f.db_id == d.db_id %}selected{% endif %}>{{ d.db_name }}</option>{% endfor %}</select></div>
+  <div><label for="difficulty">Difficulty</label>
+    <select id="difficulty" name="difficulty"><option value="">all</option>
+      {% for x in difficulties %}<option {% if f.difficulty == x %}selected{% endif %}>{{ x }}</option>{% endfor %}</select></div>
+  <div><label for="table">Touches table</label><input type="text" id="table" name="table" value="{{ f.table or '' }}" maxlength="64"></div>
+  <div><label for="text">Text contains</label><input type="text" id="text" name="text" value="{{ f.text or '' }}" maxlength="200"></div>
+  <div><button>Filter</button></div>
+</form>
+<p class="muted">{{ questions|length }} shown (max 100). A question is <em>slow</em> when its gold query's median is at least {{ slow_ms }} ms.</p>
+<div class="table-wrap"><table>
+  <tr><th>ID</th><th>Database</th><th>Difficulty</th><th>Question</th><th>Tables read by gold SQL</th><th class="num">Gold median ms</th></tr>
+  {% for q in questions %}
+  <tr><td><a href="{{ url_for('question_detail', question_id=q.question_id) }}">{{ q.question_id }}</a></td>
+      <td>{{ q.db_name }}</td><td>{{ q.difficulty }}</td><td>{{ q.question_text }}</td>
+      <td>{{ q.tables or '' }}</td>
+      <td class="num">{% if q.gold_median_ms is not none and q.gold_median_ms >= slow_ms %}<span class="warn">{{ q.gold_median_ms|ms }}</span>{% else %}{{ q.gold_median_ms|ms }}{% endif %}</td></tr>
+  {% else %}
+  <tr><td colspan="6" class="muted">No questions match these filters.</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

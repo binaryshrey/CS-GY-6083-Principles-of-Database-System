@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Run {{ run.run_id }}{% endblock %}
+{% block head %}{% if run.status == 'running' %}<meta http-equiv="refresh" content="3">{% endif %}{% endblock %}
+{% block content %}
+<h1>Run #{{ run.run_id }}
+  {% if run.status == 'done' %}<span class="badge final">done</span>{% elif run.status == 'running' %}<span class="badge">running… (page refreshes)</span>{% else %}<span class="badge rejected">{{ run.status }}</span>{% endif %}</h1>
+<div class="card">
+  <p><strong>{{ run.question_text }}</strong></p>
+  {% if run.evidence_hint %}<p class="muted">Evidence: {{ run.evidence_hint }}</p>{% endif %}
+  <p class="muted">{{ run.db_name }} · config <strong>{{ run.label }}</strong> ({{ run.model_name }}, effort {{ run.effort }}, up to {{ run.max_fix_attempts }} fixes and {{ run.max_rewrite_attempts }} rewrites)
+    · experiment {{ run.experiment }} · repeat {{ run.repeat_no }} · started {{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+  {% if run.error_detail %}<div class="flash error">{{ run.error_detail }}</div>{% endif %}
+</div>
+{% if run.status != 'running' %}
+<div class="grid">
+  {% if run.source == 'bird' %}
+  <div class="stat"><div class="v {{ 'ok' if run.is_correct else 'bad' }}">{{ 'correct' if run.is_correct else 'wrong' }}</div><div class="k">final result vs gold (as sets of rows)</div></div>
+  <div class="stat"><div class="v">{{ run.gold_median_ms|ms }}</div><div class="k">gold median ms</div></div>
+  <div class="stat"><div class="v">{{ '%.2f'|format(run.reward) if run.reward is not none else '–' }}</div><div class="k">R-VES reward (τ = {{ '%.2f'|format(run.tau) if run.tau else '–' }})</div></div>
+  {% endif %}
+  <div class="stat"><div class="v">{{ steps|length }}</div><div class="k">queries generated</div></div>
+  <div class="stat"><div class="v">{{ calls|length }}</div><div class="k">LLM calls</div></div>
+  <div class="stat"><div class="v">{{ run.total_tokens }}</div><div class="k">tokens (in + out)</div></div>
+</div>
+{% endif %}
+
+<h2>Attempts</h2>
+{% for s in steps %}
+<div class="step {{ 'final' if s.is_final else ('failed' if not s.executed_ok or s.accepted == false else '') }}">
+  <h3>Step {{ s.step_no }} · {{ s.stage }}{% if s.parent_step_no %} (revises step {{ s.parent_step_no }}){% endif %}
+    {% if s.is_final %}<span class="badge final">final</span>{% endif %}
+    {% if s.accepted == true %}<span class="badge final">rewrite accepted</span>{% elif s.accepted == false %}<span class="badge rejected">rejected: {{ s.reject_reason|replace('_', ' ') }}</span>{% endif %}</h3>
+  <pre>{{ s.sql_text }}</pre>
+  {% if s.executed_ok %}
+    <p>Median <strong>{{ s.median_ms|ms }} ms</strong> over {{ s.trials }} timed runs
+      · est. cost {{ s.startup_cost }}..{{ s.total_cost }} · est. rows {{ s.est_rows }}
+      {% if s.matches_gold is not none %}· matches gold: {% if s.matches_gold %}<span class="ok">yes</span>{% else %}<span class="bad">no</span>{% endif %}{% endif %}
+      · plan issues: {% if s.issues %}<span class="warn">{{ s.issues }}</span>{% else %}none{% endif %}</p>
+    {% if s.plan_json %}<details><summary>EXPLAIN ANALYZE plan (JSON)</summary><pre>{{ s.plan_json|pretty_json }}</pre></details>{% endif %}
+  {% else %}
+    <p class="bad">Error: {{ s.error_message }}</p>
+  {% endif %}
+</div>
+{% else %}
+<p class="muted">{% if run.status == 'running' %}Waiting for the model…{% else %}No queries were generated.{% endif %}</p>
+{% endfor %}
+
+{% if run.gold_sql %}<details><summary>Gold SQL</summary><pre>{{ run.gold_sql }}</pre></details>{% endif %}
+
+<h2>LLM calls</h2>
+<div class="table-wrap"><table>
+  <tr><th>#</th><th>Stage</th><th class="num">Input tokens</th><th class="num">Output tokens</th><th class="num">Latency ms</th></tr>
+  {% for c in calls %}<tr><td>{{ c.call_no }}</td><td>{{ c.stage }}</td><td class="num">{{ c.input_tokens }}</td><td class="num">{{ c.output_tokens }}</td><td class="num">{{ c.latency_ms }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">None yet.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}
